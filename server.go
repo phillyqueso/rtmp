@@ -71,7 +71,7 @@ const (
 
 func handleConnect(mr *MsgStream, trans float64, app string) {
 
-	l.Printf("stream %v: connect: %s", mr, app)
+	fmt.Printf("stream %v: connect: %s", mr, app)
 
 	mr.app = app
 
@@ -105,12 +105,12 @@ func handleMeta(mr *MsgStream, obj AMFObj) {
 	mr.W = int(obj.obj["width"].f64)
 	mr.H = int(obj.obj["height"].f64)
 
-	l.Printf("stream %v: meta video %dx%d", mr, mr.W, mr.H)
+	fmt.Printf("stream %v: meta video %dx%d", mr, mr.W, mr.H)
 }
 
 func handleCreateStream(mr *MsgStream, trans float64) {
 
-	l.Printf("stream %v: createStream", mr)
+	fmt.Printf("stream %v: createStream", mr)
 
 	mr.WriteAMFCmd(3, 0, []AMFObj {
 		AMFObj { atype : AMF_STRING, str : "_result", },
@@ -125,7 +125,7 @@ func handleGetStreamLength(mr *MsgStream, trans float64) {
 
 func handlePublish(mr *MsgStream) {
 
-	l.Printf("stream %v: publish", mr)
+	fmt.Printf("stream %v: publish", mr)
 
 	mr.WriteAMFCmd(3, 0, []AMFObj {
 		AMFObj { atype : AMF_STRING, str : "onStatus", },
@@ -186,7 +186,7 @@ func (m *testsrc) fetch() (err error) {
 
 func handlePlay(mr *MsgStream, strid int) {
 
-	l.Printf("stream %v: play", mr)
+	fmt.Printf("stream %v: play", mr)
 
 	var tsrc *testsrc
 	//tsrc = tsrcNew()
@@ -195,10 +195,10 @@ func handlePlay(mr *MsgStream, strid int) {
 		event <- eventS{id:E_PLAY, mr:mr}
 		<-eventDone
 	} else {
-		l.Printf("stream %v: test play data in %s", mr, tsrc.dir)
+		fmt.Printf("stream %v: test play data in %s", mr, tsrc.dir)
 		mr.W = tsrc.w
 		mr.H = tsrc.h
-		l.Printf("stream %v: test video %dx%d", mr, mr.W, mr.H)
+		fmt.Printf("stream %v: test video %dx%d", mr, mr.W, mr.H)
 	}
 
 	begin := func () {
@@ -221,7 +221,7 @@ func handlePlay(mr *MsgStream, strid int) {
 			},
 		})
 
-		l.Printf("stream %v: begin: video %dx%d", mr, mr.W, mr.H)
+		fmt.Printf("stream %v: begin: video %dx%d", mr, mr.W, mr.H)
 
 		mr.WriteAMFMeta(5, strid, []AMFObj {
 			AMFObj { atype : AMF_STRING, str : "|RtmpSampleAccess", },
@@ -231,7 +231,7 @@ func handlePlay(mr *MsgStream, strid int) {
 
 		mr.meta.obj["Server"] = AMFObj { atype : AMF_STRING, str : "Golang Rtmp Server", }
 		mr.meta.atype = AMF_OBJECT
-		l.Printf("stream %v: %v", mr, mr.meta)
+		fmt.Printf("stream %v: %v", mr, mr.meta)
 		mr.WriteAMFMeta(5, strid, []AMFObj {
 			AMFObj { atype : AMF_STRING, str : "onMetaData", },
 			mr.meta,
@@ -257,7 +257,7 @@ func handlePlay(mr *MsgStream, strid int) {
 
 	end := func () {
 
-		l.Printf("stream %v: end", mr)
+		fmt.Printf("stream %v: end", mr)
 
 		var b bytes.Buffer
 		WriteInt(&b, 1, 2)
@@ -293,11 +293,11 @@ func handlePlay(mr *MsgStream, strid int) {
 				//}
 				if nr == 0 {
 					begin()
-					l.Printf("stream %v: extra size %d %d", mr, len(mr.extraA), len(mr.extraV))
+					fmt.Printf("stream %v: extra size %d %d", mr, len(mr.extraA), len(mr.extraV))
 					mr.WriteAAC(strid, 0, mr.extraA[2:])
 					mr.WritePPS(strid, 0, mr.extraV[5:])
 				}
-				l.Printf("data %v: got %v curts %v", mr, m, m.curts)
+				fmt.Printf("data %v: got %v curts %v", mr, m, m.curts)
 				switch m.typeid {
 				case MSG_AUDIO:
 					mr.WriteAudio(strid, m.curts, m.data.Bytes()[2:])
@@ -343,7 +343,7 @@ func handlePlay(mr *MsgStream, strid int) {
 			if diff > 0 {
 				time.Sleep(time.Duration(diff)*time.Millisecond)
 			}
-			l.Printf("data %v: ts %v dur %v diff %v", mr, tsrc.ts, int(dur/1000000), diff)
+			fmt.Printf("data %v: ts %v dur %v diff %v", mr, tsrc.ts, int(dur/1000000), diff)
 			ll.Printf("#%d %d,%s,%d %d", k, tsrc.ts, tsrc.codec, tsrc.idx, len(tsrc.data))
 			k++
 		}
@@ -356,7 +356,7 @@ func serve(mr *MsgStream) {
 		if err := recover(); err != nil {
 			event <- eventS{id:E_CLOSE, mr:mr}
 			<-eventDone
-			l.Printf("stream %v: closed %v", mr, err)
+			fmt.Printf("stream %v: closed %v", mr, err)
 			//if err != "EOF" {
 			//	l.Printf("stream %v: %v", mr, string(debug.Stack()))
 			//}
@@ -397,7 +397,7 @@ func serve(mr *MsgStream) {
 				ReadAMF(m.data)
 				a3 := ReadAMF(m.data)
 				handleMeta(mr, a3)
-				l.Printf("stream %v: setdataframe", mr)
+				fmt.Printf("stream %v: setdataframe", mr)
 			case "createStream":
 				a2 := ReadAMF(m.data)
 				handleCreateStream(mr, a2.f64)
@@ -417,16 +417,16 @@ func listenEvent() {
 	for {
 		e := <-event
 		if e.id == E_DATA {
-			l.Printf("data %v: %v", e.mr, e)
+			fmt.Printf("data %v: %v", e.mr, e)
 		} else {
-			l.Printf("event %v: %v", e.mr, e)
+			fmt.Printf("event %v: %v", e.mr, e)
 		}
 		switch {
 		case e.id == E_NEW:
 			idmap[e.mr.id] = e.mr
 		case e.id == E_PUBLISH:
 			if _, ok := pubmap[e.mr.app]; ok {
-				l.Printf("event %v: duplicated publish with %v app %s", e.mr, pubmap[e.mr.app], e.mr.app)
+				fmt.Printf("event %v: duplicated publish with %v app %s", e.mr, pubmap[e.mr.app], e.mr.app)
 				e.mr.Close()
 			} else {
 				e.mr.role = PUBLISHER
@@ -458,15 +458,15 @@ func listenEvent() {
 			delete(idmap, e.mr.id)
 		case e.id == E_DATA && e.mr.stat == WAIT_EXTRA:
 			if len(e.mr.extraA) == 0 && e.m.typeid == MSG_AUDIO {
-				l.Printf("event %v: got aac config", e.mr)
+				fmt.Printf("event %v: got aac config", e.mr)
 				e.mr.extraA = e.m.data.Bytes()
 			}
 			if len(e.mr.extraV) == 0 && e.m.typeid == MSG_VIDEO {
-				l.Printf("event %v: got pps", e.mr)
+				fmt.Printf("event %v: got pps", e.mr)
 				e.mr.extraV = e.m.data.Bytes()
 			}
 			if len(e.mr.extraA) > 0 && len(e.mr.extraV) > 0 {
-				l.Printf("event %v: got all extra", e.mr)
+				fmt.Printf("event %v: got all extra", e.mr)
 				e.mr.stat = WAIT_DATA
 				for _, mr := range idmap {
 					if mr.role == PLAYER && mr.app == e.mr.app {
@@ -484,9 +484,9 @@ func listenEvent() {
 					ch := reflect.ValueOf(mr.que)
 					ok := ch.TrySend(reflect.ValueOf(e.m))
 					if !ok {
-						l.Printf("event %v: send failed", e.mr)
+						fmt.Printf("event %v: send failed", e.mr)
 					} else {
-						l.Printf("event %v: send ok", e.mr)
+						fmt.Printf("event %v: send ok", e.mr)
 					}
 				}
 			}
@@ -496,17 +496,17 @@ func listenEvent() {
 }
 
 func SimpleServer() {
-	l.Printf("server: simple server starts")
+	fmt.Printf("server: simple server starts")
 	ln, err := net.Listen("tcp", ":1935")
 	if err != nil {
-		l.Printf("server: error: listen 1935 %s\n", err)
+		fmt.Printf("server: error: listen 1935 %s\n", err)
 		return
 	}
 	go listenEvent()
 	for {
 		c, err := ln.Accept()
 		if err != nil {
-			l.Printf("server: error: sock accept %s\n", err)
+			fmt.Printf("server: error: sock accept %s\n", err)
 			break
 		}
 		go func (c net.Conn) {
